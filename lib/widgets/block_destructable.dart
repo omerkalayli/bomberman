@@ -13,7 +13,7 @@ class BlockDestructable extends StatelessWidget {
         boxShadow: [
           BoxShadow(color: Colors.black, blurRadius: 2, offset: Offset(0, 2))
         ],
-        color: Colors.brown,
+        color: const Color.fromARGB(255, 81, 46, 34),
       ),
     );
   }
