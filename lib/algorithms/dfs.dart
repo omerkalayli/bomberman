@@ -1,19 +1,16 @@
-import 'dart:collection';
-
 import 'package:bomberman/controllers/block_controller.dart';
 import 'package:bomberman/controllers/player_controller.dart';
 import 'package:bomberman/entities/block.dart';
-import 'package:bomberman/entities/player.dart';
 import 'package:get/get.dart';
 
-class BFS {
-  // BFS kullanarak geçebileceği tüm blokları ve mesafeleri bulma
+class DFS {
+  // DFS kullanarak geçebileceği tüm blokları ve mesafeleri bulma
   static Map<List<int>, List<List<int>>> findAccessibleBlocksWithPath(
     int startX,
     int startY,
   ) {
     BlockController blockController = Get.find();
-    List<List<Block?>> blocks = blockController.blocks.value;
+    List<List<Block?>> blocks = blockController.blocks;
 
     bool _isBlocked(int x, int y) {
       if (blocks[y][x] == null) return false;
@@ -26,7 +23,15 @@ class BFS {
     List<List<bool>> visited =
         List.generate(9, (_) => List.generate(9, (_) => false));
 
-    List<List<dynamic>> queue = [
+    List<List<int>> directions = [
+      [0, 1],
+      [0, -1],
+      [1, 0],
+      [-1, 0],
+    ];
+
+    // DFS için stack
+    List<List<dynamic>> stack = [
       [
         startX,
         startY,
@@ -37,16 +42,9 @@ class BFS {
     ];
     visited[startY][startX] = true;
 
-    List<List<int>> directions = [
-      [0, 1],
-      [0, -1],
-      [1, 0],
-      [-1, 0],
-    ];
-
-    // BFS başlat
-    while (queue.isNotEmpty) {
-      List<dynamic> current = queue.removeAt(0);
+    // DFS başlat
+    while (stack.isNotEmpty) {
+      List<dynamic> current = stack.removeLast();
       int x = current[0];
       int y = current[1];
       List<List<int>> currentPath = current[2];
@@ -54,7 +52,7 @@ class BFS {
       // Geçilebilir bir bloksa ve daha önce eklenmemişse, listeye ekle
       if (!_isBlocked(x, y) && !visited[y][x]) {
         accessibleBlocksWithPath[[x, y]] = currentPath;
-        visited[y][x] = true; // Bu bloğu ziyaret ettik, burayı işaretle
+        visited[y][x] = true; // Ziyeret edilen blogu isaretle
       }
 
       // Komşuları kontrol et
@@ -69,10 +67,9 @@ class BFS {
             newY < 9 &&
             !visited[newY][newX] &&
             !_isBlocked(newX, newY)) {
-          List<List<int>> newPath =
-              List.from(currentPath); // Burada currentPath'ı doğrudan kopyala
-          newPath.add([newX, newY]); // Yeni koordinat ekle
-          queue.add([newX, newY, newPath]); // Sıraya ekle
+          List<List<int>> newPath = List.from(currentPath);
+          newPath.add([newX, newY]);
+          stack.add([newX, newY, newPath]); // Stacke ekle
         }
       }
     }
@@ -85,7 +82,7 @@ class BFS {
     int startY,
   ) {
     BlockController blockController = Get.find();
-    List<List<Block?>> blocks = blockController.blocks.value;
+    List<List<Block?>> blocks = blockController.blocks;
     PlayerController playerController = Get.find();
 
     bool _isBlocked(int x, int y) {
@@ -97,7 +94,6 @@ class BFS {
 
     List<List<bool>> visited =
         List.generate(9, (_) => List.generate(9, (_) => false));
-    Queue<List<dynamic>> queue = Queue();
 
     List<List<int>> directions = [
       [0, 1], // Aşağı
@@ -106,40 +102,22 @@ class BFS {
       [-1, 0], // Sol
     ];
 
-    // Eğer başlangıç noktası tehlikeliyse burayı hemen işaretle
-    // if (_isBlocked(startX, startY)) {
-    //   return {};
-    // }
-
+    // DFS için stack kullanıyoruz
+    List<List<dynamic>> stack = [
+      [
+        startX,
+        startY,
+        [
+          [startX, startY]
+        ]
+      ] // [x, y, yol]
+    ];
     visited[startY][startX] = true;
 
-    // Başlangıç noktasını ekleme, sadece komşuları sıraya ekle
-    for (List<int> direction in directions) {
-      int newX = startX + direction[0];
-      int newY = startY + direction[1];
-
-      if (newX >= 0 &&
-          newX < 9 &&
-          newY >= 0 &&
-          newY < 9 &&
-          !_isBlocked(newX, newY)) {
-        visited[newY][newX] = true;
-        // `path`'i açıkça List<List<int>> olarak belirtiyoruz.
-        queue.add([
-          newX,
-          newY,
-          [
-            [newX, newY]
-          ] // Path başlangıç noktasını içerir
-        ]);
-      }
-    }
-
-    while (queue.isNotEmpty) {
-      var current = queue.removeFirst();
+    while (stack.isNotEmpty) {
+      List<dynamic> current = stack.removeLast();
       int x = current[0];
       int y = current[1];
-      // Burada `current[2]`'yi `List<List<int>>` olarak doğru bir şekilde alıyoruz
       List<List<int>> currentPath = List<List<int>>.from(current[2]);
 
       // Buraya kadar geldiyse, güvenli bir yerse en kısa yolu döndür
@@ -177,11 +155,9 @@ class BFS {
             !visited[newY][newX] &&
             !_isBlocked(newX, newY)) {
           visited[newY][newX] = true;
-          queue.add([
-            newX,
-            newY,
-            List.from(currentPath)..add([newX, newY])
-          ]);
+          List<List<int>> newPath = List.from(currentPath);
+          newPath.add([newX, newY]);
+          stack.add([newX, newY, newPath]); // Yığınına ekle
         }
       }
     }

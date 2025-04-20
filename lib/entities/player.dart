@@ -1,9 +1,11 @@
 import 'package:bomberman/controllers/block_controller.dart';
+import 'package:bomberman/controllers/player_controller.dart';
 import 'package:bomberman/entities/block.dart';
 import 'package:get/get.dart';
 
 class Player {
   final int id;
+  RxInt score = 0.obs;
   RxInt x;
   RxInt y;
   RxInt bombBuffCount = 1.obs;
@@ -42,7 +44,7 @@ class Player {
     Block? b = blocks[y.value - 1][x.value];
     if (y.value != 0 && b != null) {
       if (b.hasExplosion.value) {
-        isDead = true;
+        (b.bomberID!);
       }
       if (b.showPowerUp ?? false) {
         BlockController blockController = Get.find();
@@ -51,7 +53,7 @@ class Player {
         } else {
           takeFireBuff();
         }
-        blockController.takePowerUp(y.value - 1, x.value);
+        blockController.takePowerUp(y.value - 1, x.value, id);
         powerUpTaken = true;
       }
     }
@@ -68,7 +70,7 @@ class Player {
     Block? b = blocks[y.value + 1][x.value];
     if (y.value != 8 && b != null) {
       if (b.hasExplosion.value) {
-        isDead = true;
+        kill(b.bomberID!);
       }
       if (b.showPowerUp ?? false) {
         BlockController blockController = Get.find();
@@ -77,7 +79,7 @@ class Player {
         } else {
           takeFireBuff();
         }
-        blockController.takePowerUp(y.value + 1, x.value);
+        blockController.takePowerUp(y.value + 1, x.value, id);
         powerUpTaken = true;
       }
     }
@@ -94,7 +96,7 @@ class Player {
     Block? b = blocks[y.value][x.value - 1];
     if (x.value != 0 && b != null) {
       if (b.hasExplosion.value) {
-        isDead = true;
+        kill(b.bomberID!);
       }
       if (b.showPowerUp ?? false) {
         BlockController blockController = Get.find();
@@ -103,7 +105,7 @@ class Player {
         } else {
           takeFireBuff();
         }
-        blockController.takePowerUp(y.value, x.value - 1);
+        blockController.takePowerUp(y.value, x.value - 1, id);
         powerUpTaken = true;
       }
     }
@@ -120,7 +122,7 @@ class Player {
     Block? b = blocks[y.value][x.value + 1];
     if (x.value != 8 && b != null) {
       if (b.hasExplosion.value) {
-        isDead = true;
+        kill(b.bomberID!);
       }
       if (b.showPowerUp ?? false) {
         BlockController blockController = Get.find();
@@ -129,7 +131,7 @@ class Player {
         } else {
           takeFireBuff();
         }
-        blockController.takePowerUp(y.value, x.value + 1);
+        blockController.takePowerUp(y.value, x.value + 1, id);
         powerUpTaken = true;
       }
     }
@@ -141,11 +143,15 @@ class Player {
       return;
     }
     BlockController blockController = Get.find();
-    blockController.dropBomb(y.value, x.value, id);
+    blockController.dropBomb(y.value, x.value, id, fireBuffCount.value);
   }
 
-  void kill() {
+  void kill(int bomberID) {
     isDead = true;
+    PlayerController playerController = Get.find();
+    if (bomberID != id) {
+      playerController.getPlayerByID(bomberID)?.score.value += 10;
+    }
   }
 
   void takeFireBuff() {

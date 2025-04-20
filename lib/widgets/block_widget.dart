@@ -15,16 +15,18 @@ class BlockWidget extends StatelessWidget {
         border: Border.all(color: Colors.grey, width: 2),
         color: Color.fromARGB(255, 143, 129, 129),
       ),
-      child: block?.haveBomb ?? false
-          ? Center(
-              child: Container(
-                color: Colors.black,
-                decoration:
-                    BoxDecoration(borderRadius: BorderRadius.circular(99)),
-                margin: EdgeInsets.all(20),
-              ),
-            )
-          : block?.hasExplosion.value ?? false
+      child:
+          //  block?.haveBomb ?? false
+          //     ? Center(
+          //         child: Container(
+          //           color: Colors.black,
+          //           decoration:
+          //               BoxDecoration(borderRadius: BorderRadius.circular(99)),
+          //           margin: EdgeInsets.all(20),
+          //         ),
+          //       )
+          //     :
+          block?.hasExplosion.value ?? false
               ? Center(
                   child: Container(
                     color: Colors.yellow,

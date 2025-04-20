@@ -6,8 +6,8 @@ class Block {
   final PowerUp? powerUp;
   bool? showPowerUp;
   final bool? haveBomb;
-  final int? bomberID;
-  RxBool hasExplosion = false.obs; // Sadece bu özellik reaktif olacak
+  int? bomberID;
+  RxBool hasExplosion = false.obs;
 
   Block({
     this.isDestructible,
@@ -16,9 +16,8 @@ class Block {
     this.haveBomb,
     this.bomberID,
     bool? hasExplosion,
-  }) : hasExplosion = RxBool(hasExplosion ?? false); // Varsayılan false
+  }) : hasExplosion = RxBool(hasExplosion ?? false);
 
-  // copyWith fonksiyonunda sadece hasExplosion reaktif olacak
   Block copyWith({
     required int x,
     required int y,
@@ -35,8 +34,7 @@ class Block {
       showPowerUp: showPowerUp,
       haveBomb: haveBomb,
       bomberID: bomberID,
-      hasExplosion:
-          hasExplosion, // Burada reaktif olmayan değer ataması yapıyoruz
+      hasExplosion: hasExplosion,
     );
   }
 

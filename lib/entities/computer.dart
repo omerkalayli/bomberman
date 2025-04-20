@@ -1,6 +1,8 @@
-import 'package:bomberman/algorithms/a_star.dart';
+import 'package:bomberman/algorithms/a_star_and_bakctracking.dart';
 import 'package:bomberman/algorithms/bfs.dart';
+import 'package:bomberman/algorithms/dfs.dart';
 import 'package:bomberman/controllers/block_controller.dart';
+import 'package:bomberman/controllers/player_controller.dart';
 import 'package:bomberman/entities/player.dart';
 import 'package:get/get.dart';
 
@@ -11,15 +13,27 @@ class Computer extends Player {
   List<int>? bestBlock;
   Map<List<int>, List<List<int>>>? nearestSafePlace;
 
-  // BFS
-  void findAccessibleBlocks() {
-    accessibleBlocks = BFS.findAccessibleBlocksWithPath(x.value, y.value);
+  // BFS veya DFS
+  void findAccessibleBlocks(Algorithm alg) {
+    if (alg == Algorithm.BFS) {
+      accessibleBlocks = BFS.findAccessibleBlocksWithPath(x.value, y.value);
+    } else if (alg == Algorithm.DFS) {
+      accessibleBlocks = DFS.findAccessibleBlocksWithPath(x.value, y.value);
+    }
   }
 
-  void findBestAStarBlock() {
-    bestBlock =
-        AStar.findBestBlock(accessibleBlocks ?? {}, fireBuffCount.value);
-    // print("${bestBlock![0]}, ${bestBlock![1]}");
+  void findBestBlockAStar(Algorithm alg) {
+    if (accessibleBlocks?.isEmpty ?? true) {
+      bestBlock = null;
+    } else {
+      if (alg == Algorithm.AStar1) {
+        bestBlock = AStarAndBakctracking.findBestBlock1(
+            accessibleBlocks ?? {}, fireBuffCount.value, id);
+      } else if (alg == Algorithm.AStar2) {
+        bestBlock = AStarAndBakctracking.findBestBlock2(
+            accessibleBlocks ?? {}, fireBuffCount.value, id);
+      }
+    }
   }
 
   @override
@@ -27,18 +41,20 @@ class Computer extends Player {
     BlockController blockController = Get.find();
     for (var turn in path) {
       if (turn[1] > y.value) {
-        moveUp(blockController.blocks);
-      }
-      if (turn[1] < y.value) {
-        moveDown(blockController.blocks);
-      }
-      if (turn[0] < x.value) {
         moveRight(blockController.blocks);
       }
-      if (turn[0] > x.value) {
+      if (turn[1] < y.value) {
         moveLeft(blockController.blocks);
       }
-      findAccessibleBlocks();
+      if (turn[0] < x.value) {
+        moveUp(blockController.blocks);
+      }
+      if (turn[0] > x.value) {
+        moveDown(blockController.blocks);
+      }
+      // findAccessibleBlocks();
+      PlayerController playerController = Get.find();
+      playerController.players.refresh();
       await Future.delayed(Duration(milliseconds: 200));
     }
   }
@@ -47,13 +63,28 @@ class Computer extends Player {
     nearestSafePlace = BFS.findNearestSafePlace(x.value, y.value);
   }
 
-  void agentStart() async {
-    while (true) {
+  void agentStart(Algorithm alg1, Algorithm alg2) async {
+    BlockController blockController = Get.find();
+    blockController.initExplosionIndexHandling();
+
+    while (!isDead) {
+      PlayerController playerController = Get.find();
+      bool hasAliveOpponent =
+          playerController.players.value.any((p) => p.id != id && !p.isDead);
+      if (!hasAliveOpponent) {
+        score.value += 10;
+        break;
+      }
+
       // 1. Geçerli durumu analiz et (Erişilebilir blokları hesapla)
-      findAccessibleBlocks();
+      findAccessibleBlocks(alg1);
 
       // 2. En iyi hedef bloğu bul
-      findBestAStarBlock();
+      findBestBlockAStar(alg2);
+      if (bestBlock == null) {
+        await Future.delayed(Duration(milliseconds: 200));
+        continue;
+      }
 
       // 3. En iyi bloğa git
       if (accessibleBlocks != null) {
@@ -63,16 +94,20 @@ class Computer extends Player {
       }
 
       // 4. Bombayı bırak
+      while (bombBuffCount.value <= 0) {
+        await Future.delayed(Duration(milliseconds: 200));
+      }
       dropBomb();
 
-      // 5. Wn yakın güvenli yere git
+      // 5. En yakın güvenli yere git
       findNearestSafePlace();
-      List<List<int>> path = nearestSafePlace!.values.first;
-      await moveTo(path);
-
-      // 5. Bir süre bekle ve tekrar kontrol et
-      await Future.delayed(Duration(
-          milliseconds: 500)); // 500ms bekleyerek döngüyü tekrar başlat
+      if (nearestSafePlace?.isNotEmpty ?? false) {
+        if (nearestSafePlace!.values.first.isNotEmpty) {
+          await moveTo(nearestSafePlace!.values.first);
+        }
+      }
     }
   }
 }
+
+enum Algorithm { BFS, AStar1, AStar2, DFS }

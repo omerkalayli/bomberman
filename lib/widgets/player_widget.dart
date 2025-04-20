@@ -18,7 +18,7 @@ class PlayerWidget extends StatelessWidget {
       child: isDead ?? false
           ? Icon(
               Icons.close,
-              color: Colors.redAccent,
+              color: color,
               size: 48,
             )
           : null,
